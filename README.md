@@ -118,3 +118,69 @@ python scripts/browser_verify.py
 
 The script prints PASS/FAIL for each behavior-contract item and exits non-zero if any check
 fails.
+
+## Run with Docker
+
+```bash
+docker build -t task-tracker .
+docker run --rm -p 8000:8000 task-tracker
+curl http://localhost:8000/health
+```
+
+The image only contains the backend (`app/` + `requirements.txt`); the frontend is still a
+plain static file, opened or served separately as described above. The container runs as a
+non-root user and does not copy `.env`, tests, docs, or dev tooling - see `Dockerfile` and
+`.dockerignore`.
+
+## Final Project
+
+Branch reviewed: `final-project`
+
+### What this submission demonstrates
+
+- The existing Task Tracker app still runs inside the intended course scope - no new
+  product features were added on this branch.
+- CI (`.github/workflows/ci.yml`) runs the pytest suite on every push and pull request.
+- The Docker image builds and runs, and `/health` returns `200`.
+- AI review, security, and ownership evidence is in `docs/release-evidence.md`,
+  `docs/final-ai-review.md`, and `docs/ai-playbook.md`.
+
+### How to run locally
+
+```bash
+python3 -m venv venv
+source venv/bin/activate        # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
+
+### How to run tests
+
+```bash
+pytest tests/ -v
+```
+
+### How to run with Docker
+
+```bash
+docker build -t task-tracker .
+docker run --rm -p 8000:8000 task-tracker
+curl http://localhost:8000/health
+```
+
+### Evidence files
+
+- `docs/release-evidence.md`
+- `docs/final-ai-review.md`
+- `docs/ai-playbook.md`
+
+### AI assistance summary
+
+AI helped draft or review: the CI workflow, the Dockerfile, `AGENTS.md`, the release/AI-review
+docs, and a read-only security pass over `app/` and the new release files.
+
+I verified the work by: running the full pytest suite, hitting `/health` on both the local
+`uvicorn` server and the built Docker container, re-running `scripts/browser_verify.py`
+against the unchanged frontend, and reading every changed file myself before accepting it.
+
+One AI suggestion I rejected or corrected: see `docs/final-ai-review.md#one-ai-output-i-rejected-or-corrected`.

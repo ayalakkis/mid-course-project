@@ -230,3 +230,25 @@ def test_tags_preserved_after_unrelated_update(client):
     response = client.patch(f"/tasks/{task_id}", json={"description": "updated description"})
     assert response.status_code == 200
     assert response.json()["tags"] == ["keep-me"]
+
+
+# ---- description / assignee length limits (final-project security pass) ----
+
+def test_create_task_description_over_limit_returns_422(client):
+    response = client.post("/tasks", json={"title": "Task", "description": "x" * 2001})
+    assert response.status_code == 422
+
+
+def test_create_task_description_at_limit_returns_201(client):
+    response = client.post("/tasks", json={"title": "Task", "description": "x" * 2000})
+    assert response.status_code == 201
+
+
+def test_create_task_assignee_over_limit_returns_422(client):
+    response = client.post("/tasks", json={"title": "Task", "assignee": "x" * 101})
+    assert response.status_code == 422
+
+
+def test_patch_description_over_limit_returns_422(client, created_task):
+    response = client.patch(f"/tasks/{created_task['id']}", json={"description": "x" * 2001})
+    assert response.status_code == 422

@@ -1,0 +1,32 @@
+# Version control and CI
+.git
+.github
+
+# Python (bare patterns only match the context root in .dockerignore, unlike .gitignore -
+# use a **/ prefix so nested dirs like app/__pycache__/ are actually excluded; verified
+# with a scratch-image build, see docs/final-ai-review.md)
+**/__pycache__/
+**/*.pyc
+**/*.egg-info/
+**/.pytest_cache/
+
+# Virtual environments
+venv/
+.venv/
+
+# Secrets - never bake these into an image
+.env
+*.env
+
+# Not needed at runtime: frontend is served separately (static file, no build step),
+# tests/docs/scripts are dev-time only
+frontend/
+tests/
+docs/
+scripts/
+requirements-dev.txt
+
+# Editor/OS cruft
+.DS_Store
+.vscode/
+.idea/

@@ -13,6 +13,8 @@ from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validat
 
 MAX_TAGS = 5
 MAX_TAG_LENGTH = 30
+MAX_DESCRIPTION_LENGTH = 2000
+MAX_ASSIGNEE_LENGTH = 100
 
 
 class TaskStatus(str, Enum):
@@ -34,6 +36,18 @@ def _validate_title(value: str) -> str:
     if len(stripped) > 200:
         raise ValueError("Title must be 200 characters or fewer")
     return stripped
+
+
+def _validate_description(value: Optional[str]) -> Optional[str]:
+    if value is not None and len(value) > MAX_DESCRIPTION_LENGTH:
+        raise ValueError(f"Description must be {MAX_DESCRIPTION_LENGTH} characters or fewer")
+    return value
+
+
+def _validate_assignee(value: Optional[str]) -> Optional[str]:
+    if value is not None and len(value) > MAX_ASSIGNEE_LENGTH:
+        raise ValueError(f"Assignee must be {MAX_ASSIGNEE_LENGTH} characters or fewer")
+    return value
 
 
 def _normalize_due_date(value: Optional[datetime]) -> Optional[datetime]:
@@ -91,6 +105,16 @@ class TaskCreate(BaseModel):
     def validate_title(cls, value: str) -> str:
         return _validate_title(value)
 
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, value: Optional[str]) -> Optional[str]:
+        return _validate_description(value)
+
+    @field_validator("assignee")
+    @classmethod
+    def validate_assignee(cls, value: Optional[str]) -> Optional[str]:
+        return _validate_assignee(value)
+
     @field_validator("due_date")
     @classmethod
     def validate_due_date(cls, value: Optional[datetime]) -> Optional[datetime]:
@@ -119,6 +143,16 @@ class TaskUpdate(BaseModel):
         if value is None:
             return value
         return _validate_title(value)
+
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, value: Optional[str]) -> Optional[str]:
+        return _validate_description(value)
+
+    @field_validator("assignee")
+    @classmethod
+    def validate_assignee(cls, value: Optional[str]) -> Optional[str]:
+        return _validate_assignee(value)
 
     @field_validator("due_date")
     @classmethod

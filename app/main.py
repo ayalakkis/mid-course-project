@@ -21,8 +21,12 @@ app.add_middleware(
         "http://127.0.0.1:8080",
     ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    # Narrowed from "*" during the final-project security pass: these are the only
+    # methods/headers this API actually exposes (GET/POST/PATCH/DELETE on /tasks,
+    # Content-Type is the only non-simple header the frontend sends). See
+    # docs/final-ai-review.md for the finding this came from.
+    allow_methods=["GET", "POST", "PATCH", "DELETE"],
+    allow_headers=["Content-Type"],
 )
 
 
