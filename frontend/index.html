@@ -117,6 +117,11 @@
   .priority-Medium { background: var(--medium); color: #3a2900; }
   .priority-Low { background: var(--low); }
   .assignee { color: var(--muted); }
+  .overdue-pill {
+    display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 10px;
+    background: var(--danger); color: #fff; font-size: 0.72rem; font-weight: 700;
+  }
+  .due-date { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
   .card-actions { margin-top: 8px; text-align: right; }
   .card-actions button { padding: 4px 10px; font-size: 0.78rem; }
 
@@ -152,6 +157,9 @@
     <p>Kanban board backed by the FastAPI Task Tracker API</p>
   </div>
   <div class="toolbar">
+    <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color: var(--muted);">
+      <input type="checkbox" id="overdue-filter" /> Overdue only
+    </label>
     <button id="new-task-btn" class="btn-primary">+ New Task</button>
     <button id="retry-btn" class="btn-secondary" style="display:none;">Retry</button>
   </div>
@@ -209,6 +217,10 @@
       <label for="field-assignee">Assignee</label>
       <input type="text" id="field-assignee" />
     </div>
+    <div class="field">
+      <label for="field-due-date">Due date</label>
+      <input type="date" id="field-due-date" />
+    </div>
     <div class="modal-actions">
       <button class="btn-secondary" id="cancel-btn">Cancel</button>
       <button class="btn-primary" id="save-btn">Save</button>
@@ -248,10 +260,19 @@ function hideBanner() {
   retryBtn.style.display = "none";
 }
 
+function buildTaskQuery() {
+  const params = new URLSearchParams();
+  if (document.getElementById("overdue-filter").checked) {
+    params.set("overdue", "true");
+  }
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}
+
 async function fetchTasks() {
   showBanner("loading", "Loading tasks...");
   try {
-    const response = await fetch(`${API_BASE}/tasks`);
+    const response = await fetch(`${API_BASE}/tasks${buildTaskQuery()}`);
     if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
     tasks = await response.json();
     hideBanner();
@@ -284,6 +305,8 @@ function renderCard(task) {
       <span class="priority-badge priority-${task.priority}">${task.priority}</span>
       <span class="assignee">${task.assignee ? escapeHtml(task.assignee) : "Unassigned"}</span>
     </div>
+    ${task.due_date ? `<div class="due-date">Due ${escapeHtml(task.due_date.slice(0, 10))}</div>` : ""}
+    ${task.overdue ? `<span class="overdue-pill">Overdue</span>` : ""}
     <div class="card-actions"><button class="btn-secondary edit-btn" data-id="${task.id}">Edit</button></div>
   `;
   card.addEventListener("dragstart", (e) => {
@@ -369,6 +392,7 @@ function openModal(taskId) {
     document.getElementById("field-status").value = task.status;
     document.getElementById("field-priority").value = task.priority;
     document.getElementById("field-assignee").value = task.assignee || "";
+    document.getElementById("field-due-date").value = task.due_date ? task.due_date.slice(0, 10) : "";
   } else {
     editingTaskId = null;
     modalTitle.textContent = "New Task";
@@ -377,6 +401,7 @@ function openModal(taskId) {
     document.getElementById("field-status").value = "ToDo";
     document.getElementById("field-priority").value = "Medium";
     document.getElementById("field-assignee").value = "";
+    document.getElementById("field-due-date").value = "";
   }
   modalOverlay.classList.remove("hidden");
 }
@@ -395,12 +420,14 @@ async function saveTask() {
   titleError.classList.remove("visible");
   formErrorBanner.classList.remove("visible");
 
+  const dueDateValue = document.getElementById("field-due-date").value;
   const payload = {
     title,
     description: document.getElementById("field-description").value,
     status: document.getElementById("field-status").value,
     priority: document.getElementById("field-priority").value,
     assignee: document.getElementById("field-assignee").value.trim() || null,
+    due_date: dueDateValue ? `${dueDateValue}T00:00:00Z` : null,
   };
 
   const isEdit = Boolean(editingTaskId);
@@ -431,6 +458,7 @@ document.getElementById("new-task-btn").addEventListener("click", () => openModa
 document.getElementById("cancel-btn").addEventListener("click", closeModal);
 document.getElementById("save-btn").addEventListener("click", saveTask);
 document.getElementById("retry-btn").addEventListener("click", fetchTasks);
+document.getElementById("overdue-filter").addEventListener("change", fetchTasks);
 modalOverlay.addEventListener("click", (e) => {
   if (e.target === modalOverlay) closeModal();
 });
