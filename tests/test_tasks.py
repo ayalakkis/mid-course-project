@@ -182,3 +182,51 @@ def test_filter_overdue_returns_only_overdue_tasks(client):
     assert response.status_code == 200
     titles = [t["title"] for t in response.json()]
     assert titles == ["Overdue"]
+
+
+# ---- Tags / labels (mid-course feature) ----
+
+def test_create_task_with_tags_returns_201_with_trimmed_tags(client):
+    response = client.post(
+        "/tasks",
+        json={"title": "Tagged task", "tags": [" backend ", "urgent"]},
+    )
+    assert response.status_code == 201
+    assert response.json()["tags"] == ["backend", "urgent"]
+
+
+def test_create_task_with_blank_tag_returns_422(client):
+    response = client.post(
+        "/tasks",
+        json={"title": "Bad tag task", "tags": ["ok", "   "]},
+    )
+    assert response.status_code == 422
+
+
+def test_patch_updates_tags(client, created_task):
+    response = client.patch(
+        f"/tasks/{created_task['id']}",
+        json={"tags": ["frontend", "design"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["tags"] == ["frontend", "design"]
+
+
+def test_filter_by_tag_returns_only_matching_tasks(client):
+    client.post("/tasks", json={"title": "Backend work", "tags": ["backend"]})
+    client.post("/tasks", json={"title": "Frontend work", "tags": ["frontend"]})
+    client.post("/tasks", json={"title": "No tags"})
+
+    response = client.get("/tasks", params={"tag": "backend"})
+    assert response.status_code == 200
+    titles = [t["title"] for t in response.json()]
+    assert titles == ["Backend work"]
+
+
+def test_tags_preserved_after_unrelated_update(client):
+    create = client.post("/tasks", json={"title": "Has tags", "tags": ["keep-me"]})
+    task_id = create.json()["id"]
+
+    response = client.patch(f"/tasks/{task_id}", json={"description": "updated description"})
+    assert response.status_code == 200
+    assert response.json()["tags"] == ["keep-me"]

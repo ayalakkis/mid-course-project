@@ -9,7 +9,10 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, computed_field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
+
+MAX_TAGS = 5
+MAX_TAG_LENGTH = 30
 
 
 class TaskStatus(str, Enum):
@@ -48,6 +51,30 @@ def _normalize_due_date(value: Optional[datetime]) -> Optional[datetime]:
     return value
 
 
+def _validate_tags(tags: Optional[list[str]]) -> Optional[list[str]]:
+    """Trim each tag, reject blanks, and enforce count/length limits.
+
+    Tags are kept in the case the client sent them (not lowercased):
+    an earlier AI draft suggested normalizing to lowercase, but that was
+    rejected because it silently rewrites what the user typed with no
+    clear benefit for a single-list, no-autocomplete tag field at this
+    project's scope. See docs/midcourse/mini-adr.md.
+    """
+    if tags is None:
+        return tags
+    if len(tags) > MAX_TAGS:
+        raise ValueError(f"A task may have at most {MAX_TAGS} tags")
+    cleaned: list[str] = []
+    for tag in tags:
+        stripped = tag.strip()
+        if not stripped:
+            raise ValueError("Tags cannot be blank")
+        if len(stripped) > MAX_TAG_LENGTH:
+            raise ValueError(f"Each tag must be {MAX_TAG_LENGTH} characters or fewer")
+        cleaned.append(stripped)
+    return cleaned
+
+
 class TaskCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -57,6 +84,7 @@ class TaskCreate(BaseModel):
     priority: TaskPriority = TaskPriority.MEDIUM
     assignee: Optional[str] = None
     due_date: Optional[datetime] = None
+    tags: list[str] = Field(default_factory=list)
 
     @field_validator("title")
     @classmethod
@@ -68,6 +96,11 @@ class TaskCreate(BaseModel):
     def validate_due_date(cls, value: Optional[datetime]) -> Optional[datetime]:
         return _normalize_due_date(value)
 
+    @field_validator("tags")
+    @classmethod
+    def validate_tags(cls, value: list[str]) -> list[str]:
+        return _validate_tags(value) or []
+
 
 class TaskUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -78,6 +111,7 @@ class TaskUpdate(BaseModel):
     priority: Optional[TaskPriority] = None
     assignee: Optional[str] = None
     due_date: Optional[datetime] = None
+    tags: Optional[list[str]] = None
 
     @field_validator("title")
     @classmethod
@@ -91,6 +125,11 @@ class TaskUpdate(BaseModel):
     def validate_due_date(cls, value: Optional[datetime]) -> Optional[datetime]:
         return _normalize_due_date(value)
 
+    @field_validator("tags")
+    @classmethod
+    def validate_tags(cls, value: Optional[list[str]]) -> Optional[list[str]]:
+        return _validate_tags(value)
+
 
 class TaskResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -102,6 +141,7 @@ class TaskResponse(BaseModel):
     priority: TaskPriority
     assignee: Optional[str]
     due_date: Optional[datetime] = None
+    tags: list[str] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
 
