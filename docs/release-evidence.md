@@ -34,22 +34,26 @@
 
 ## Docker evidence
 
-- Build command: `docker build -t task-tracker .`
-- Run command: `docker run --rm -p 8000:8000 task-tracker`
-- `/health` check: `curl http://localhost:8000/health`
-- Non-root check: yes - the `Dockerfile` creates and switches to `appuser`
-  (`USER appuser`) before `CMD` runs; the process does not run as root inside the
-  container.
-- No-baked-secrets check: yes - `.dockerignore` excludes `.env`/`*.env`, and the image
-  only ever `COPY`s `requirements.txt` and `app/` (see `Dockerfile`); `.env.example`
-  itself contains only placeholder values (`PORT`, `APP_ENV`), never real config.
-- **Status: build/run verified on aya's machine, not in the cloud sandbox.** The sandbox
-  this was drafted in blocks outbound requests to `registry-1.docker.io` (base-image
-  pulls return `403 Forbidden` - a sandbox network-egress restriction, not a problem
-  with the Dockerfile itself), so the build/run/`/health` check for this section has to
-  be completed somewhere with normal internet access. [Fill in the real
-  build/run/`/health` output here once run locally - see the checklist in the final
-  chat message for the exact commands.]
+- **Status: build/run verified for real**, in a GitHub Codespace on `origin/final-project`
+  (`docker --version`: `Docker version 29.3.0-1, build 5927d80`) - not the local machine,
+  which has no Docker install, and not the earlier drafting sandbox, which blocked
+  `registry-1.docker.io` outbound (`403 Forbidden` on the base-image pull - a network-egress
+  restriction of that sandbox, not a problem with the `Dockerfile`).
+- Build command: `docker build -t task-tracker .` - succeeded, final image
+  `docker.io/library/task-tracker:latest` (259MB disk / 61.4MB content), `DONE 3.8s` for
+  the export stage.
+- Run command: `docker run -d --rm --name tt -p 8000:8000 task-tracker` - container started
+  (id `378e6ed1d1b7`).
+- `/health` check: `curl -s -w '\nHTTP_STATUS:%{http_code}\n' http://localhost:8000/health`
+  -> `{"status":"ok","timestamp":"2026-08-26T14:46:52.892510+00:00"}` / `HTTP_STATUS:200`.
+- Non-root check: confirmed by execing into the running container -
+  `docker exec tt whoami` -> `appuser`; `docker exec tt id` ->
+  `uid=1000(appuser) gid=1000(appuser) groups=1000(appuser)` - the process is not root.
+- No-baked-secrets check: confirmed by execing into the running container -
+  `find / -maxdepth 3 -iname '*.env*'` returned nothing, and `ls /app` shows only `app/`
+  and `requirements.txt` - no `.env`, tests, docs, or scripts made it into the image.
+- Cleaned up after verification: `docker stop tt` (container was `--rm`, so it was removed
+  on stop); the Codespace used to run this was deleted afterward.
 
 ## Documentation claim-vs-reality log
 
