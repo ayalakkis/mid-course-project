@@ -9,11 +9,21 @@ Usage (with the backend running on :8000 and the frontend served on :5500):
     python scripts/browser_verify.py
 """
 
+import os
 import sys
 import time
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
+
+# This sandbox environment ships a pre-installed Chromium at a fixed path
+# instead of the usual `playwright install` cache. Use it when present;
+# otherwise fall back to Playwright's normal auto-detected browser so this
+# script also runs on a regular machine after `playwright install chromium`.
+_SANDBOX_CHROMIUM = "/opt/pw-browsers/chromium"
+LAUNCH_KWARGS = {"headless": True}
+if os.path.exists(_SANDBOX_CHROMIUM):
+    LAUNCH_KWARGS["executable_path"] = _SANDBOX_CHROMIUM
 
 FRONTEND_URL = "http://localhost:5500/index.html"
 SCREENSHOT_DIR = Path(__file__).resolve().parent.parent / "docs" / "midcourse" / "screenshots"
@@ -29,7 +39,7 @@ def check(label: str, condition: bool) -> None:
 
 def main() -> int:
     with sync_playwright() as p:
-        browser = p.chromium.launch(executable_path="/opt/pw-browsers/chromium", headless=True)
+        browser = p.chromium.launch(**LAUNCH_KWARGS)
         page = browser.new_page(viewport={"width": 1280, "height": 800})
 
         page.goto(FRONTEND_URL)

@@ -24,6 +24,8 @@ tests/
   conftest.py        Fixtures (TestClient, storage reset, created_task)
   test_tasks.py       API test suite
   verify_a.py         Standalone model-verification script
+scripts/
+  browser_verify.py   Headless-browser (Playwright) UI verification, see below
 docs/
   midcourse/          Mid-course project documentation (see below)
 ```
@@ -99,3 +101,20 @@ controls above the board).
 
 See `docs/midcourse/` for user stories, the mini-ADR, the prompt log, verification evidence
 (including Break Test proof), and the final reflection.
+
+### Re-running the UI verification evidence
+
+`docs/midcourse/screenshots/` and the manual-browser-check results in
+`docs/midcourse/verification.md` were produced by driving the real frontend against the real
+backend in headless Chromium, rather than by hand. To reproduce it:
+
+```bash
+pip install -r requirements-dev.txt
+playwright install chromium   # only needed if you don't already have a Chromium install
+uvicorn app.main:app --port 8000 &
+python3 -m http.server 5500 --directory frontend &
+python scripts/browser_verify.py
+```
+
+The script prints PASS/FAIL for each behavior-contract item and exits non-zero if any check
+fails.

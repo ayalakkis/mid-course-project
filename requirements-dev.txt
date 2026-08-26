@@ -1,0 +1,5 @@
+# Optional: only needed to re-run scripts/browser_verify.py (headless-browser
+# evidence for docs/midcourse/verification.md). Not required to run the app,
+# the API tests, or the frontend.
+-r requirements.txt
+playwright>=1.45
