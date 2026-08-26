@@ -398,32 +398,59 @@ document.querySelectorAll(".column").forEach((column) => {
 });
 
 // ---- Modal ----
+const FORM_FIELD_IDS = {
+  title: "field-title",
+  description: "field-description",
+  status: "field-status",
+  priority: "field-priority",
+  assignee: "field-assignee",
+  dueDate: "field-due-date",
+  tags: "field-tags",
+};
+
+const NEW_TASK_DEFAULTS = {
+  title: "",
+  description: "",
+  status: "ToDo",
+  priority: "Medium",
+  assignee: "",
+  dueDate: "",
+  tags: "",
+};
+
+function populateForm(values) {
+  Object.entries(FORM_FIELD_IDS).forEach(([key, elementId]) => {
+    document.getElementById(elementId).value = values[key] ?? "";
+  });
+}
+
+function formValuesFromTask(task) {
+  return {
+    title: task.title,
+    description: task.description || "",
+    status: task.status,
+    priority: task.priority,
+    assignee: task.assignee || "",
+    dueDate: task.due_date ? task.due_date.slice(0, 10) : "",
+    tags: (task.tags || []).join(", "),
+  };
+}
+
 function openModal(taskId) {
   formErrorBanner.classList.remove("visible");
   titleError.classList.remove("visible");
+  document.getElementById("tags-error").classList.remove("visible");
+
   if (taskId) {
     const task = tasks.find((t) => t.id === taskId);
     editingTaskId = taskId;
     modalTitle.textContent = "Edit Task";
-    document.getElementById("field-title").value = task.title;
-    document.getElementById("field-description").value = task.description || "";
-    document.getElementById("field-status").value = task.status;
-    document.getElementById("field-priority").value = task.priority;
-    document.getElementById("field-assignee").value = task.assignee || "";
-    document.getElementById("field-due-date").value = task.due_date ? task.due_date.slice(0, 10) : "";
-    document.getElementById("field-tags").value = (task.tags || []).join(", ");
+    populateForm(formValuesFromTask(task));
   } else {
     editingTaskId = null;
     modalTitle.textContent = "New Task";
-    document.getElementById("field-title").value = "";
-    document.getElementById("field-description").value = "";
-    document.getElementById("field-status").value = "ToDo";
-    document.getElementById("field-priority").value = "Medium";
-    document.getElementById("field-assignee").value = "";
-    document.getElementById("field-due-date").value = "";
-    document.getElementById("field-tags").value = "";
+    populateForm(NEW_TASK_DEFAULTS);
   }
-  document.getElementById("tags-error").classList.remove("visible");
   modalOverlay.classList.remove("hidden");
 }
 
@@ -432,8 +459,17 @@ function closeModal() {
   editingTaskId = null;
 }
 
+function readFormValues() {
+  const raw = {};
+  Object.entries(FORM_FIELD_IDS).forEach(([key, elementId]) => {
+    raw[key] = document.getElementById(elementId).value;
+  });
+  return raw;
+}
+
 async function saveTask() {
-  const title = document.getElementById("field-title").value.trim();
+  const raw = readFormValues();
+  const title = raw.title.trim();
   if (!title) {
     titleError.classList.add("visible");
     return;
@@ -441,9 +477,7 @@ async function saveTask() {
   titleError.classList.remove("visible");
   formErrorBanner.classList.remove("visible");
 
-  const dueDateValue = document.getElementById("field-due-date").value;
-  const tagsRaw = document.getElementById("field-tags").value;
-  const tags = tagsRaw
+  const tags = raw.tags
     .split(",")
     .map((t) => t.trim())
     .filter((t) => t.length > 0);
@@ -456,11 +490,11 @@ async function saveTask() {
 
   const payload = {
     title,
-    description: document.getElementById("field-description").value,
-    status: document.getElementById("field-status").value,
-    priority: document.getElementById("field-priority").value,
-    assignee: document.getElementById("field-assignee").value.trim() || null,
-    due_date: dueDateValue ? `${dueDateValue}T00:00:00Z` : null,
+    description: raw.description,
+    status: raw.status,
+    priority: raw.priority,
+    assignee: raw.assignee.trim() || null,
+    due_date: raw.dueDate ? `${raw.dueDate}T00:00:00Z` : null,
     tags,
   };
 
