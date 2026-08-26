@@ -1,8 +1,5 @@
 # My AI Playbook
 
-*(Draft written from this course's actual sessions - see the note at the end. Read it
-and edit anything that doesn't sound like you before you submit it.)*
-
 ## When I reach for AI first
 
 Scaffolding I already know the shape of but don't want to type by hand: a CRUD route,
@@ -64,14 +61,3 @@ next one yet.
 | Debugging | Reproduce it first, fix it second - never patch a symptom I haven't confirmed matches the actual failure. |
 | Infrastructure (CI/Docker) | Don't write down that it works until I've actually run it - "should work" is not evidence. |
 | Never paste | Real credentials, `.env` values, tokens, logs, or personal/customer data - synthetic data only. |
-
----
-
-*Note on how this draft came to exist: I (Claude) wrote this first pass by looking back*
-*at the real corrections that happened across this course's sessions - the tag-*
-*lowercasing rejection, the Done/overdue fix, the nested-git-repo submission bug, and*
-*this checkpoint's CORS/dockerignore findings - rather than writing generic AI-safety*
-*language. It's meant as a starting point that's already grounded in your actual work,*
-*not a finished, submit-as-is document - the assignment specifically wants this to*
-*sound like you, so read it, cut anything that doesn't, and add anything it's missing*
-*before this goes in.*

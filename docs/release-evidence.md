@@ -21,9 +21,9 @@
 ## CI evidence
 
 - Workflow file: `.github/workflows/ci.yml`.
-- Latest run link or note: workflow added on the `final-project` branch in this
-  checkpoint; it will produce its first Actions run on the next push to GitHub. [Once
-  pushed, replace this line with the run URL from the Actions tab.]
+- Latest run link or note: pushed to `origin/final-project` on
+  `github.com/ayalakkis/mid-course-project`; first Actions run completed successfully -
+  https://github.com/ayalakkis/mid-course-project/actions/runs/32981345650
 - Test command used by CI: `pytest tests/ -v` (same command as the local baseline above,
   after `pip install -r requirements.txt` on Python 3.11 - matches the local
   environment exactly, so a CI failure can't be explained away as "works on my machine").
